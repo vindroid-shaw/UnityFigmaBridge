@@ -21,19 +21,19 @@ namespace UnityFigmaBridge.Editor.Nodes
         public static void ApplyLayoutPropertiesForNode( GameObject nodeGameObject,Node node,
             FigmaImportProcessData figmaImportProcessData,out GameObject scrollContentGameObject)
         {
-            
+
             // Depending on whether scrolling is applied, we may want to add layout to this object or to the content
             // holder
-            
+
             var targetLayoutObject = nodeGameObject;
             scrollContentGameObject = null;
-            
+
             // Check scrolling requirements
             var implementScrolling = node.type == NodeType.FRAME && node.overflowDirection != Node.OverflowDirection.NONE;
             if (implementScrolling)
             {
                 // This Frame implements scrolling, so we need to add in appropriate functionality
-                
+
                 // Add in a rect mask to implement clipping
                 if (node.clipsContent) UnityUiUtils.GetOrAddComponent<RectMask2D>(nodeGameObject);
 
@@ -44,15 +44,15 @@ namespace UnityFigmaBridge.Editor.Nodes
                 scrollContentRectTransform.anchorMin = scrollContentRectTransform.anchorMax =new Vector2(0,1);
                 scrollContentRectTransform.anchoredPosition=Vector2.zero;
                 scrollContentRectTransform.SetParent(nodeGameObject.transform, false);
-                
+
                 var scrollRectComponent = UnityUiUtils.GetOrAddComponent<ScrollRect>(nodeGameObject);
                 scrollRectComponent.content = scrollContentGameObject.transform as RectTransform;
                 scrollRectComponent.horizontal =
-                    node.overflowDirection is Node.OverflowDirection.HORIZONTAL_SCROLLING 
+                    node.overflowDirection is Node.OverflowDirection.HORIZONTAL_SCROLLING
                         or Node.OverflowDirection.HORIZONTAL_AND_VERTICAL_SCROLLING;
 
                 scrollRectComponent.vertical =
-                    node.overflowDirection is Node.OverflowDirection.VERTICAL_SCROLLING 
+                    node.overflowDirection is Node.OverflowDirection.VERTICAL_SCROLLING
                         or Node.OverflowDirection.HORIZONTAL_AND_VERTICAL_SCROLLING;
 
 
@@ -67,17 +67,17 @@ namespace UnityFigmaBridge.Editor.Nodes
                 // Apply layout to this content clip
                 targetLayoutObject = scrollContentGameObject;
             }
-            
-            
+
+
             // Ignore if layout mode is NONE or layout disabled
             if (node.layoutMode == Node.LayoutMode.NONE || !figmaImportProcessData.Settings.EnableAutoLayout) return;
-            
+
             // Remove an existing layout group if it exists
             var existingLayoutGroup = targetLayoutObject.GetComponent<HorizontalOrVerticalLayoutGroup>();
             if (existingLayoutGroup!=null) UnityEngine.Object.DestroyImmediate(existingLayoutGroup);
-            
+
             HorizontalOrVerticalLayoutGroup layoutGroup = null;
-            
+
             switch (node.layoutMode)
             {
                 case Node.LayoutMode.VERTICAL:
@@ -116,6 +116,9 @@ namespace UnityFigmaBridge.Editor.Nodes
                                 _ => layoutGroup.childAlignment
                             };
                             break;
+                        case Node.PrimaryAxisAlignItems.SPACE_BETWEEN:
+                            layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+                            break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
@@ -151,6 +154,8 @@ namespace UnityFigmaBridge.Editor.Nodes
                             Node.CounterAxisAlignItems.MAX => TextAnchor.LowerRight,
                             _ => layoutGroup.childAlignment
                         },
+                        // Space between
+                        Node.PrimaryAxisAlignItems.SPACE_BETWEEN => TextAnchor.MiddleCenter,
                         _ => throw new ArgumentOutOfRangeException()
                     };
                     break;
